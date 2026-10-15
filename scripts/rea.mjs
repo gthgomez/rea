@@ -26,6 +26,17 @@ if (process.platform === "win32" && process.env.USERPROFILE === "") {
   delete process.env.USERPROFILE;
 }
 
+// An unusable TEMP resolves to an unwritable system directory on Windows and
+// fails the native self-test and provider runtime roots inside the imported
+// runtimes. Probe and repoint once, before importing any compiled runtime.
+try {
+  const { ensureWritableTempEnv } =
+    await import("../dist/windows/TempEnvironmentGuard.js");
+  ensureWritableTempEnv();
+} catch {
+  // The compiled runtime is missing; the existence check below reports it.
+}
+
 // Playwright's registry assumes one of its three desktop host platforms when
 // it chooses the browser cache directory. Termux reports `android`, although
 // its Node runtime and filesystem are POSIX-compatible. Keep the cache path
