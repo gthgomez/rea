@@ -17,6 +17,25 @@ export const browserScopeOptions = {
     .array(z.string().min(1))
     .optional()
     .describe("Optional exact-origin filter"),
+  allowedOrigin: z
+    .string()
+    .optional()
+    .describe(
+      "Comma-separated exact-origin filter and a shell-safe alternative to quoting the allowedOrigins JSON array",
+    ),
+};
+
+/** Combine array and shell-safe scalar origin filters in declaration order. */
+export const mergedAllowedOrigins = (options: {
+  readonly allowedOrigins?: readonly string[] | undefined;
+  readonly allowedOrigin?: string | undefined;
+}): string[] | undefined => {
+  const scalar = (options.allowedOrigin ?? "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter((origin) => origin.length > 0);
+  const merged = [...(options.allowedOrigins ?? []), ...scalar];
+  return merged.length > 0 ? merged : undefined;
 };
 
 export const browserPageInspectionOptions = z.object({

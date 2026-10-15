@@ -1,7 +1,10 @@
 import { Cli, z } from "incur";
 
 import { browserContext, browserCliError } from "../cliBrowserContext.js";
-import { browserScopeOptions } from "../cliObservationOptions.js";
+import {
+  browserScopeOptions,
+  mergedAllowedOrigins,
+} from "../cliObservationOptions.js";
 import {
   captureWebScreenshot,
   compareWebCaptureEvidence,
@@ -67,7 +70,7 @@ const registerWebMcp = (
           const context = browserContext();
           const input = {
             cdp_endpoint: args.endpoint,
-            allowed_origins: options.allowedOrigins,
+            allowed_origins: mergedAllowedOrigins(options),
             target_id: args.targetId,
             observation_ms: options.observationMs,
           };
@@ -173,7 +176,7 @@ const registerScreenshot = (
           const context = browserContext();
           const input = {
             cdp_endpoint: args.endpoint,
-            allowed_origins: options.allowedOrigins,
+            allowed_origins: mergedAllowedOrigins(options),
             target_id: args.targetId,
           };
           const parsed = captureWebScreenshotInputSchema.safeParse(input);

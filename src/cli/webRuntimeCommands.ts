@@ -3,6 +3,7 @@ import { createWebRuntimeService } from "../composition/webRuntime.js";
 import { browserCliError } from "../cliBrowserContext.js";
 import {
   browserScopeOptions,
+  mergedAllowedOrigins,
   observationDuration,
 } from "../cliObservationOptions.js";
 import { logCliCommand } from "../cliLogging.js";
@@ -43,7 +44,7 @@ export const registerWebRuntimeCommands = (
             {
               cdp_endpoint: args.endpoint,
               target_id: args.targetId,
-              allowed_origins: options.allowedOrigins,
+              allowed_origins: mergedAllowedOrigins(options),
               observation_ms: options.observationMs,
             },
             { progress: runtimeProgress, signal },
@@ -73,7 +74,7 @@ export const registerWebRuntimeCommands = (
               cdp_endpoint: args.endpoint,
               target_id: args.targetId,
               selector: args.selector,
-              allowed_origins: options.allowedOrigins,
+              allowed_origins: mergedAllowedOrigins(options),
             },
             { signal },
           );

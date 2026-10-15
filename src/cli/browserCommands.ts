@@ -20,6 +20,7 @@ import { CLI_COMMANDS } from "../cliCommandNames.js";
 import {
   browserPageInspectionOptions,
   browserScopeOptions,
+  mergedAllowedOrigins,
   observationDuration,
 } from "../cliObservationOptions.js";
 import { withCommandCancellation } from "./commandCancellation.js";
@@ -54,7 +55,7 @@ const registerTargetList = (
           const context = browserContext();
           const input = {
             cdp_endpoint: args.endpoint,
-            allowed_origins: options.allowedOrigins,
+            allowed_origins: mergedAllowedOrigins(options),
           };
           const parsed = listBrowserTargetsInputSchema.safeParse(input);
           if (!parsed.success)
@@ -96,7 +97,7 @@ const registerPageInspection = (
           const context = browserContext();
           const input = {
             cdp_endpoint: args.endpoint,
-            allowed_origins: options.allowedOrigins,
+            allowed_origins: mergedAllowedOrigins(options),
             target_id: args.targetId,
             observation_ms: options.observationMs,
             include_accessibility_text: options.includeAccessibilityText,
@@ -152,7 +153,7 @@ const registerBundleAnalysis = (
           const context = browserContext();
           const input = {
             cdp_endpoint: args.endpoint,
-            allowed_origins: options.allowedOrigins,
+            allowed_origins: mergedAllowedOrigins(options),
             target_id: args.targetId,
             observation_ms: options.observationMs,
             include_script_sources: true,
@@ -198,7 +199,7 @@ const registerObservationSession = (
           const context = browserContext();
           const input = {
             cdp_endpoint: args.endpoint,
-            allowed_origins: options.allowedOrigins,
+            allowed_origins: mergedAllowedOrigins(options),
             target_id: args.targetId,
             observation_ms: options.observationMs,
           };
