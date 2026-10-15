@@ -1,4 +1,5 @@
 import { INSPECT_ANALYSIS_VIEW_OPERATION } from "../../domain/analysisView/analysisViewErrors.js";
+import { readFileSync } from "node:fs";
 import { z } from "zod";
 
 import { ANALYSIS_VIEW_PROVIDER } from "../InvestigationProviders.js";
@@ -7,6 +8,7 @@ import { resolveEvidenceInput } from "../EvidenceInputResolver.js";
 import type { EvidenceWriter } from "../investigation/InvestigationRecordPort.js";
 import type { AnalysisError } from "../../domain/analysisErrorBase.js";
 import { AnalysisCapabilityUnavailableError } from "../../domain/analysisErrorCore.js";
+import { AnalysisInputError } from "../../domain/analysisErrorCore.js";
 import { analysisInputErrorFromIssues } from "../../domain/inputIssueProjection.js";
 import { EvidenceIntegrityError } from "../../domain/evidenceErrors.js";
 import {
@@ -41,7 +43,25 @@ export const inspectAnalysisView = (
         { cause: parsed.error },
       ),
     );
-  return inspectAnalysisViewValidated(parsed.data, lookup);
+  const input = parsed.data;
+  if (input.source.kind === "file") {
+    let evidence: unknown;
+    try {
+      evidence = JSON.parse(readFileSync(input.source.path, "utf8"));
+    } catch (cause: unknown) {
+      return err(
+        new AnalysisInputError(INSPECT_ANALYSIS_VIEW_OPERATION, {
+          cause,
+          userMessage: `The Evidence file ${input.source.path} could not be read as JSON (${cause instanceof Error ? cause.message : String(cause)}).`,
+        }),
+      );
+    }
+    return inspectAnalysisViewValidated(
+      { ...input, source: { kind: "inline", evidence } },
+      lookup,
+    );
+  }
+  return inspectAnalysisViewValidated(input, lookup);
 };
 
 /** Authenticate borrowed inline Evidence after adapter envelope validation. */
@@ -166,6 +186,13 @@ const resolveAnalysisViewSource = (
 ): Result<Evidence, AnalysisError> => {
   if (source.kind === "retained-evidence")
     return resolveEvidenceInput(source, lookup);
+  if (source.kind === "file")
+    return err(
+      new AnalysisInputError(INSPECT_ANALYSIS_VIEW_OPERATION, {
+        userMessage:
+          "A file Evidence source must be read before view admission.",
+      }),
+    );
   try {
     return ok(parseEvidence(source.evidence));
   } catch (cause: unknown) {

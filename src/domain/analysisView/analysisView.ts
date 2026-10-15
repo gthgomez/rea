@@ -245,7 +245,7 @@ const inlineEvidenceInputSchema = z.unknown().nonoptional();
 inlineEvidenceInputSchema._zod.processJSONSchema =
   evidenceSchema._zod.processJSONSchema;
 
-/** Unauthenticated inline input or an exact same-session retained reference. */
+/** Unauthenticated inline input, an exact same-session retained reference, or a local Evidence file. */
 export const analysisViewSourceSchema = z.discriminatedUnion("kind", [
   z.strictObject({
     kind: z.literal("retained-evidence"),
@@ -254,6 +254,15 @@ export const analysisViewSourceSchema = z.discriminatedUnion("kind", [
   z.strictObject({
     kind: z.literal("inline"),
     evidence: inlineEvidenceInputSchema,
+  }),
+  z.strictObject({
+    kind: z.literal("file"),
+    path: z
+      .string()
+      .min(1)
+      .describe(
+        "Absolute local filesystem path to a UTF-8 JSON file holding the complete Evidence record. The server reads and parses the whole file in memory, so very large Evidence requires matching server memory.",
+      ),
   }),
 ]);
 

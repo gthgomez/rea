@@ -1,6 +1,6 @@
 import { z } from "incur";
 
-import { inspectAnalysisViewValidated } from "../application/analysisView/AnalysisViewService.js";
+import { inspectAnalysisView } from "../application/analysisView/AnalysisViewService.js";
 import { readEvidenceBundle } from "../application/EvidenceBundleFiles.js";
 import { inspectEvidenceBundle } from "../application/investigation/InspectEvidenceBundle.js";
 import {
@@ -94,7 +94,7 @@ export const registerAnalysisViewCommands = (
               ),
             ),
           };
-        const result = inspectAnalysisViewValidated(parsed.data);
+        const result = inspectAnalysisView(input.value);
         return result.ok
           ? jsonValueSchema.parse(result.value)
           : {
