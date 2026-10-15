@@ -8,6 +8,7 @@ import {
   presentInputJsonSchema,
 } from "./inputSchemaPresentation.js";
 import { digestCanonicalValue } from "../domain/canonicalDigest.js";
+import { normalizeAdvertisedInputSchemaForClientCompatibility } from "./clientCompatibleAdvertisedSchema.js";
 
 const PROPERTY_DESCRIPTIONS: Readonly<Record<string, string>> = {
   addresses: "Ordered provider-normalized procedure addresses to analyze.",
@@ -60,38 +61,41 @@ type JsonSchemaProjection = z.ZodType["~standard"]["jsonSchema"]["input"];
 export const toolInputSchemaWithMetadata = <Contract extends ToolContract>(
   contract: Contract,
 ): Contract["inputSchema"] =>
-  withAdvertisedJsonSchema(
-    contract.inputSchema,
-    "input",
-    (project) => (options) => {
-      const shared = project({
-        ...options,
-        libraryOptions: { reused: "ref", ...options.libraryOptions },
-      });
-      const examples = advertisedInputExamples(contract);
-      return {
-        // Sharing definitions only helps clients that resolve them. A client
-        // rendering declarations from a shared expansion budget degrades
-        // every reference past it to `unknown`, so an input whose shared form
-        // exceeds the budget is re-projected without shared definitions.
-        ...inputSchemaWithinReferenceExpansionBudget(
-          presentInputJsonSchema(shared, fallbackPropertyDescription),
-          () =>
-            presentInputJsonSchema(
-              project({
-                ...options,
-                libraryOptions: {
-                  ...options.libraryOptions,
-                  reused: "inline",
-                },
-              }),
-              fallbackPropertyDescription,
-            ),
-          advertisedReferenceExpansionBudget,
-        ),
-        ...(examples.length === 0 ? {} : { examples }),
-      };
-    },
+  transformAdvertisedInputJsonSchema(
+    withAdvertisedJsonSchema(
+      contract.inputSchema,
+      "input",
+      (project) => (options) => {
+        const shared = project({
+          ...options,
+          libraryOptions: { reused: "ref", ...options.libraryOptions },
+        });
+        const examples = advertisedInputExamples(contract);
+        return {
+          // Sharing definitions only helps clients that resolve them. A client
+          // rendering declarations from a shared expansion budget degrades
+          // every reference past it to `unknown`, so an input whose shared form
+          // exceeds the budget is re-projected without shared definitions.
+          ...inputSchemaWithinReferenceExpansionBudget(
+            presentInputJsonSchema(shared, fallbackPropertyDescription),
+            () =>
+              presentInputJsonSchema(
+                project({
+                  ...options,
+                  libraryOptions: {
+                    ...options.libraryOptions,
+                    reused: "inline",
+                  },
+                }),
+                fallbackPropertyDescription,
+              ),
+            advertisedReferenceExpansionBudget,
+          ),
+          ...(examples.length === 0 ? {} : { examples }),
+        };
+      },
+    ),
+    normalizeAdvertisedInputSchemaForClientCompatibility,
   );
 
 /** Return the same complete input JSON Schema projection registered on MCP. */
