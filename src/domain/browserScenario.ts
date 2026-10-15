@@ -128,6 +128,29 @@ const validateBrowserScenario = (
   references.push(...destinationSecretReferences(scenario.start_url));
   references.push(...validateStorage(scenario));
   validateSecretReferences(scenario, references, context);
+
+  if (scenario.browser.mode === "connect") {
+    if (
+      scenario.browser.cdp_endpoint === undefined &&
+      scenario.browser.endpoint === undefined
+    )
+      context.addIssue({
+        code: "custom",
+        path: ["browser"],
+        message:
+          "connect mode requires cdp_endpoint (or its shell-friendly endpoint alias)",
+      });
+    if (
+      scenario.browser.cdp_endpoint !== undefined &&
+      scenario.browser.endpoint !== undefined &&
+      scenario.browser.cdp_endpoint !== scenario.browser.endpoint
+    )
+      context.addIssue({
+        code: "custom",
+        path: ["browser"],
+        message: "cdp_endpoint and its endpoint alias disagree",
+      });
+  }
 };
 
 /** Strict provider-neutral contract for one controlled browser scenario. */

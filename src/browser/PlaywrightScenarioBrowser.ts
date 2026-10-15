@@ -210,11 +210,15 @@ const acquireAttachedScenario = (
 ): Promise<AttachedScenarioLease> => {
   if (signal?.aborted === true)
     return Promise.reject(new BrowserObservationError(OPERATION, "cancelled"));
+  const leaseEndpoint = scenario.cdp_endpoint ?? scenario.endpoint;
+  if (leaseEndpoint === undefined)
+    return Promise.reject(
+      new BrowserObservationError(OPERATION, "endpoint_unreachable", {
+        detail: "connect mode requires cdp_endpoint or its endpoint alias",
+      }),
+    );
 
-  const key = attachedScenarioLeaseKey(
-    scenario.cdp_endpoint,
-    scenario.target_id,
-  );
+  const key = attachedScenarioLeaseKey(leaseEndpoint, scenario.target_id);
   const admission =
     attachedScenarioAdmissions.get(key) ??
     ({
@@ -527,7 +531,21 @@ const openAttachedScenarioBrowser = async (
     if (priorOwner !== undefined) await priorOwner.close();
     throwIfScenarioCancelled(signal);
 
-    const browser = await launcher.connectOverCDP(browserRequest.cdp_endpoint);
+    const connectEndpoint =
+      browserRequest.cdp_endpoint ?? browserRequest.endpoint;
+    if (connectEndpoint === undefined)
+      throw new BrowserObservationError(OPERATION, "endpoint_unreachable", {
+        detail: "connect mode requires cdp_endpoint or its endpoint alias",
+      });
+    let browser;
+    try {
+      browser = await launcher.connectOverCDP(connectEndpoint);
+    } catch (cause: unknown) {
+      throw new Error(
+        `Connecting to the CDP endpoint ${connectEndpoint} failed (${cause instanceof Error ? cause.message : String(cause)}). Verify the endpoint with list-browser-targets and confirm target_id names a page target served by it.`,
+        { cause },
+      );
+    }
     const cleanup: PlaywrightScenarioBrowserCleanupOwner =
       new PlaywrightScenarioBrowserCleanupOwner({
         closeBrowser: async () => {

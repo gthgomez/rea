@@ -89,7 +89,8 @@ export const browserScenarioBrowserSchema = z.discriminatedUnion("mode", [
   }),
   z.strictObject({
     mode: z.literal("connect"),
-    cdp_endpoint: browserEndpointSchema,
+    cdp_endpoint: browserEndpointSchema.optional(),
+    endpoint: browserEndpointSchema.optional(),
     target_id: z.string().trim().min(1),
   }),
 ]);

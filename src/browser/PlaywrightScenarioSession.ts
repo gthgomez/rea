@@ -210,15 +210,22 @@ export class PlaywrightScenarioSession implements BrowserScenarioSessionPort {
   ): Promise<PlaywrightScenarioSession> {
     let events: PlaywrightScenarioEvents | undefined;
     let storage: PlaywrightScenarioStorage | undefined;
-    const serviceWorkers =
+    let serviceWorkers: PlaywrightScenarioServiceWorkers | undefined;
+    if (
       scenario.browser.mode === "connect" &&
       scenario.environment.service_workers === "block"
-        ? new PlaywrightScenarioServiceWorkers(
-            opened.page,
-            scenario.browser.cdp_endpoint,
-            scenario.browser.target_id,
-          )
-        : undefined;
+    ) {
+      const serviceWorkersEndpoint =
+        scenario.browser.cdp_endpoint ?? scenario.browser.endpoint;
+      serviceWorkers =
+        serviceWorkersEndpoint === undefined
+          ? undefined
+          : new PlaywrightScenarioServiceWorkers(
+              opened.page,
+              serviceWorkersEndpoint,
+              scenario.browser.target_id,
+            );
+    }
     try {
       await withPlaywrightExecutionBoundary(
         async () => {
